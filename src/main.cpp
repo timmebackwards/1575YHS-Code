@@ -1,5 +1,7 @@
 #include "main.h"
+#include "subsystems.hpp"
 
+using namespace pros;
 /////
 // For installation, upgrading, documentations, and tutorials, check out our website!
 // https://ez-robotics.github.io/EZ-Template/
@@ -8,12 +10,12 @@
 // Chassis constructor
 ez::Drive chassis(
     // These are your drive motors, the first motor is used for sensing!
-    {1, 2, 3},     // Left Chassis Ports (negative port will reverse it!)
-    {-4, -5, -6},  // Right Chassis Ports (negative port will reverse it!)
+    {8, 10},     // Left Chassis Ports (negative port will reverse it!)
+    {-7, -12},  // Right Chassis Ports (negative port will reverse it!)
 
-    7,      // IMU Port
-    4.125,  // Wheel Diameter (Remember, 4" wheels without screw holes are actually 4.125!)
-    343);   // Wheel RPM = cartridge * (motor gear / wheel gear)
+    19,      // IMU Port
+    3.25,  // Wheel Diameter (Remember, 4" wheels without screw holes are actually 4.125!)
+    360);   // Wheel RPM = cartridge * (motor gear / wheel gear)
 
 // Uncomment the trackers you're using here!
 // - `8` and `9` are smart ports (making these negative will reverse the sensor)
@@ -100,6 +102,23 @@ void disabled() {
  */
 void competition_initialize() {
   // . . .
+}
+
+
+void spinIntake(int voltage) {
+  intake.move(voltage);
+  secondStage.move(voltage);
+}
+
+int toggle = 1;
+void clampMogo() {
+    toggle *= -1;
+    if(toggle == 1){
+        mogoClamp.retract();
+    } else {
+        mogoClamp.extend();
+    }
+    delay(250);
 }
 
 /**
@@ -253,10 +272,19 @@ void opcontrol() {
     // chassis.opcontrol_arcade_flipped(ez::SPLIT);    // Flipped split arcade
     // chassis.opcontrol_arcade_flipped(ez::SINGLE);   // Flipped single arcade
 
-    // . . .
-    // Put more user control code here!
-    // . . .
+    if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_B)) clampMogo();
+    if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_A)) intakeLift.toggle();
 
+    if (master.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) {
+      spinIntake(127);
+      secondStage.move(127);
+    } else if (master.get_digital(pros::E_CONTROLLER_DIGITAL_R2)) {
+        intake.move(-127);
+        secondStage.move(-127);
+    } else {
+        spinIntake(0);
+        secondStage.move(0);
+    }
     pros::delay(ez::util::DELAY_TIME);  // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
   }
 }
